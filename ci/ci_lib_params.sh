@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ****************************************************************************
-#  Project:  LibCMaker_libpng
-#  Purpose:  A CMake build script for libpng library
+#  Project:  LibCMaker
+#  Purpose:  A CMake build scripts for build libraries with CMake
 #  Author:   NikitaFeodonit, nfeodonit@yandex.com
 # ****************************************************************************
-#    Copyright (c) 2017-2021 NikitaFeodonit
+#    Copyright (c) 2017-2026 NikitaFeodonit
 #
-#    This file is part of the LibCMaker_libpng project.
+#    This file is part of the LibCMaker project.
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published

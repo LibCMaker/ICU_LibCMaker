@@ -1,11 +1,11 @@
 /*****************************************************************************
- * Project:  LibCMaker_ICU
- * Purpose:  A CMake build script for ICU library
+ * Project:  LibCMaker
+ * Purpose:  A CMake build scripts for build libraries with CMake
  * Author:   NikitaFeodonit, nfeodonit@yandex.com
  *****************************************************************************
- *   Copyright (c) 2017-2019 NikitaFeodonit
+ *   Copyright (c) 2017-2026 NikitaFeodonit
  *
- *    This file is part of the LibCMaker_ICU project.
+ *    This file is part of the LibCMaker project.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published
