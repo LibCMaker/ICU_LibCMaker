@@ -25,21 +25,20 @@
 if(BUILD_TESTING)
   cmr_common_test_part()
 
+  if(TARGET ICU::datpackage)
+    get_target_property(icu_datpackage_LIB ICU::datpackage IMPORTED_LOCATION)
+  endif()
+
+  set_tests_properties(${test_NAME} PROPERTIES
+    ENVIRONMENT
+      "ICU_DATA=${icu_datpackage_LIB}"
+  )
+
   target_sources(${test_NAME}
     PRIVATE
-      ${test_src_DIR}/uprint.c
       ${test_src_DIR}/example_test.cpp
-  )
-  set_target_properties(${test_NAME} PROPERTIES
-    CXX_STANDARD 11
-    C_STANDARD 11
   )
 
   # ICU
-  if(NOT BUILD_SHARED_LIBS)
-    target_compile_definitions(${test_NAME} PRIVATE U_STATIC_IMPLEMENTATION)
-  endif()
-  target_link_libraries(${test_NAME} PRIVATE ICU::i18n ICU::uc ICU::data)
-  # ICU is C++ library.
-  set_target_properties(${test_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(${test_NAME} PRIVATE ICU::io ICU::i18n ICU::uc ICU::data)
 endif()

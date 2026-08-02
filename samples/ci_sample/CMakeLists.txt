@@ -37,38 +37,25 @@ cmr_common_sample_part__project_settings()
 
 
 #-----------------------------------------------------------------------
-# Common sample part
+# Unpack, configure, build and find the required libraries
 #-----------------------------------------------------------------------
 
-cmr_common_sample_part__add_executable()
-
-
-#-----------------------------------------------------------------------
-# Download, configure, build, install and find the required libraries
-#-----------------------------------------------------------------------
-
-include(${LibCMaker_LIB_DIR}/LibCMaker_ICU/cmr_build_icu.cmake)
+list(APPEND CMAKE_PREFIX_PATH ${LibCMaker_LIB_DIR}/ICU_LibCMaker/cmake)
+find_package(ICU REQUIRED NO_PACKAGE_ROOT_PATH)
 
 
 #-----------------------------------------------------------------------
 # Build the executable of the example
 #-----------------------------------------------------------------------
 
-# Get an example sources from the lib sources.
-set(lib_EXAMPLES_SRC_DIR
-  "${cmr_UNPACKED_DIR}/icu-${ICU_lib_VERSION}/icu/source/samples"
-)
+cmr_common_sample_part__add_executable()
+cmr_common_sample_part__set_cxx_c_standards()
+
+set(example_src_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
 
 target_sources(${PROJECT_NAME}
   PRIVATE
-    ${lib_EXAMPLES_SRC_DIR}/date/date.c
-    ${lib_EXAMPLES_SRC_DIR}/date/uprint.c
-    #${lib_EXAMPLES_SRC_DIR}/cal/cal.c
-    #${lib_EXAMPLES_SRC_DIR}/cal/uprint.c
-)
-set_target_properties(${PROJECT_NAME} PROPERTIES
-  CXX_STANDARD 11
-  C_STANDARD 99
+    ${example_src_DIR}/test.cpp
 )
 
 
@@ -76,21 +63,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Link to the libraries
 #-----------------------------------------------------------------------
 
-#CPPFLAGS += -I$(top_srcdir)/common -I$(top_srcdir)/i18n
-#LIBS = $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
-
 # ICU
-if(NOT BUILD_SHARED_LIBS)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE U_STATIC_IMPLEMENTATION)
-endif()
-target_link_libraries(${PROJECT_NAME} PRIVATE ICU::i18n ICU::uc ICU::data)
-# ICU is C++ library.
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(${PROJECT_NAME} PRIVATE ICU::io ICU::i18n ICU::uc ICU::data)
 
 
 #-----------------------------------------------------------------------
 # Testing
 #-----------------------------------------------------------------------
 
-set(test_src_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
-add_subdirectory(test)
+cmr_common_test_part__add_subdirectory_test()

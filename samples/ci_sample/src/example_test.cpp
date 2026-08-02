@@ -21,219 +21,90 @@
  *    along with this program. If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-// The code is based on the code from
-// <icu-source>/icu/source/samples/date.c
+// The code is based on the code from "test.cpp"
+// https://gist.github.com/tarekgh/71ad02888da20ce33b776806ee7ca9cb
 
-/*
-*************************************************************************
-*   © 2016 and later: Unicode, Inc. and others.
-*   License & terms of use: http://www.unicode.org/copyright.html#License
-*************************************************************************
-***********************************************************************
-*   Copyright (C) 1998-2012, International Business Machines
-*   Corporation and others.  All Rights Reserved.
-**********************************************************************
-*
-* File date.c
-*
-* Modification History:
-*
-*   Date        Name        Description
-*   06/11/99    stephen     Creation.
-*   06/16/99    stephen     Modified to use uprint.
-*   08/11/11    srl         added Parse and milli/second in/out
-*******************************************************************************
-*/
+// This code allows to check the existence of ICU .dat package file,
+// icudtXXx.dat, icudt<version><flag>.dat
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "unicode/uclean.h"
-#include "unicode/ustring.h"
-#include "unicode/utypes.h"
-
-#include "unicode/ucal.h"
-#include "unicode/ucnv.h"
-#include "unicode/udat.h"
-
-#include "uprint.h"
+#include <unicode/ucol.h>
+#include <unicode/usearch.h>
+#include <unicode/ustring.h>
 
 #include "gtest/gtest.h"
 
-#if UCONFIG_NO_FORMATTING || UCONFIG_NO_CONVERSION
-
 TEST(Examle, test) {
-  printf("%s: Sorry, UCONFIG_NO_FORMATTING or UCONFIG_NO_CONVERSION was turned "
-         "on (see uconfig.h). No formatting can be done. \n",
-         argv[0]);
-  EXPECT_TRUE(false);
+  UErrorCode err = U_ZERO_ERROR;
+
+  UCollator *collator = ucol_open("da_DK", &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error open collator " << err;
+
+  UColAttributeValue attributeValue = ucol_getAttribute(collator, UCOL_STRENGTH, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error get attribute search " << err;
+  ASSERT_EQ(2, attributeValue);
+
+  attributeValue = ucol_getAttribute(collator, UCOL_CASE_LEVEL, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error get case attribute search " << err;
+  ASSERT_EQ(16, attributeValue);
+
+  char *source = (char *) "This is a fox";
+  char *target = (char *) "Fox";
+
+  UChar usource[100];
+  UChar utarget[100];
+
+  u_uastrcpy(usource, source);
+  u_uastrcpy(utarget, target);
+
+  ucol_setAttribute(collator, UCOL_STRENGTH, UCOL_PRIMARY, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error set strength attribute search " << err;
+
+  attributeValue = ucol_getAttribute(collator, UCOL_CASE_LEVEL, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error get case attribute search " << err;
+  ASSERT_EQ(16, attributeValue);
+
+  ucol_setAttribute(collator, UCOL_CASE_LEVEL, UCOL_ON, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error set case level attribute search " << err;
+
+  attributeValue = ucol_getAttribute(collator, UCOL_STRENGTH, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error get attribute search " << err;
+  ASSERT_EQ(0, attributeValue);
+
+  attributeValue = ucol_getAttribute(collator, UCOL_CASE_LEVEL, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error get case attribute search " << err;
+  ASSERT_EQ(17, attributeValue);
+
+  UStringSearch *search = usearch_openFromCollator(utarget, -1, usource, -1, collator, NULL, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error open search " << err;
+
+  int32_t result = usearch_first(search, &err);
+  ASSERT_TRUE(U_SUCCESS(err)) << "Error search " << err;
+  ASSERT_STREQ("Fox", target);
+  ASSERT_STREQ("This is a fox", source);
+  ASSERT_EQ(10, result);
+
+  UChar unewLine[4];
+  uint8_t sortKey[130];
+  u_uastrcpy(unewLine, "\x00E6");
+
+  int32_t sortKeyLength = ucol_getSortKey(collator, unewLine, -1, sortKey, 30);
+  ASSERT_EQ(5, sortKeyLength) << "Error, couldn't get the sort key for 00E6 character";
+  ASSERT_EQ(255, (int32_t) sortKey[0]);
+  ASSERT_EQ(253, (int32_t) sortKey[1]);
+  ASSERT_EQ(1, (int32_t) sortKey[2]);
+  ASSERT_EQ(48, (int32_t) sortKey[3]);
+  ASSERT_EQ(0, (int32_t) sortKey[4]);
+
+  u_uastrcpy(unewLine, "ae");
+
+  sortKeyLength = ucol_getSortKey(collator, unewLine, -1, sortKey, 130);
+  ASSERT_EQ(5, sortKeyLength) << "Error, couldn't get the sort key for the phrase has a new line character";
+  ASSERT_EQ(43, (int32_t) sortKey[0]);
+  ASSERT_EQ(51, (int32_t) sortKey[1]);
+  ASSERT_EQ(1, (int32_t) sortKey[2]);
+  ASSERT_EQ(64, (int32_t) sortKey[3]);
+  ASSERT_EQ(0, (int32_t) sortKey[4]);
+
+  usearch_close(search);
+  ucol_close(collator);
 }
-#else
-
-/* Protos */
-static void date(UDate when, const UChar *tz, UDateFormatStyle style,
-                 const char *format, UErrorCode *status);
-static UDate getWhen(const char *millis, const char *seconds,
-                     const char *format, UDateFormatStyle style,
-                     const char *parse, const UChar *tz, UErrorCode *status);
-
-UConverter *cnv = NULL;
-
-/* The version of date */
-#define DATE_VERSION "1.0"
-
-/* "GMT" */
-static const UChar GMT_ID[] = {0x0047, 0x004d, 0x0054, 0x0000};
-
-#define FORMAT_MILLIS "%"
-#define FORMAT_SECONDS "%%"
-
-TEST(Examle, test) {
-  const UChar *tz = 0;
-  UDateFormatStyle style = UDAT_DEFAULT;
-  UErrorCode status = U_ZERO_ERROR;
-  const char *format = NULL;
-  char *parse = NULL;
-  char *seconds = NULL;
-  char *millis = NULL;
-  UDate when;
-
-  /* get the 'when' (or now) */
-  when = getWhen(millis, seconds, format, style, parse, tz, &status);
-  if (parse != NULL) {
-    format = FORMAT_MILLIS; /* output in millis */
-  }
-
-  /* print the date */
-  date(when, tz, style, format, &status);
-
-  ucnv_close(cnv);
-
-  u_cleanup();
-  EXPECT_FALSE(U_FAILURE(status));
-}
-
-static int32_t charsToUCharsDefault(UChar *uchars, int32_t ucharsSize,
-                                    const char *chars, int32_t charsSize,
-                                    UErrorCode *status) {
-  int32_t len = -1;
-  if (U_FAILURE(*status))
-    return len;
-  if (cnv == NULL) {
-    cnv = ucnv_open(NULL, status);
-  }
-  if (cnv && U_SUCCESS(*status)) {
-    len = ucnv_toUChars(cnv, uchars, ucharsSize, chars, charsSize, status);
-  }
-  return len;
-}
-
-/* Format the date */
-static void date(UDate when, const UChar *tz, UDateFormatStyle style,
-                 const char *format, UErrorCode *status) {
-  UChar *s = 0;
-  int32_t len = 0;
-  UDateFormat *fmt;
-  UChar uFormat[100];
-
-  if (U_FAILURE(*status))
-    return;
-
-  if (format != NULL) {
-    if (!strcmp(format, FORMAT_MILLIS)) {
-      printf("%.0f\n", when);
-      return;
-    } else if (!strcmp(format, FORMAT_SECONDS)) {
-      printf("%.3f\n", when / 1000.0);
-      return;
-    }
-  }
-
-  fmt = udat_open(style, style, 0, tz, -1, NULL, 0, status);
-  if (format != NULL) {
-    charsToUCharsDefault(uFormat, sizeof(uFormat) / sizeof(uFormat[0]), format,
-                         -1, status);
-    udat_applyPattern(fmt, FALSE, uFormat, -1);
-  }
-  len = udat_format(fmt, when, 0, len, 0, status);
-  if (*status == U_BUFFER_OVERFLOW_ERROR) {
-    *status = U_ZERO_ERROR;
-    s = (UChar *)malloc(sizeof(UChar) * (len + 1));
-    if (s == 0)
-      goto finish;
-    udat_format(fmt, when, s, len + 1, 0, status);
-  }
-  if (U_FAILURE(*status))
-    goto finish;
-
-  /* print the date string */
-  uprint(s, stdout, status);
-
-  /* print a trailing newline */
-  printf("\n");
-
-finish:
-  if (U_FAILURE(*status)) {
-    fprintf(stderr, "Error in Print: %s\n", u_errorName(*status));
-  }
-  udat_close(fmt);
-  free(s);
-}
-
-static UDate getWhen(const char *millis, const char *seconds,
-                     const char *format, UDateFormatStyle style,
-                     const char *parse, const UChar *tz, UErrorCode *status) {
-  UDateFormat *fmt = NULL;
-  UChar uFormat[100];
-  UChar uParse[256];
-  UDate when = 0;
-  int32_t parsepos = 0;
-
-  if (millis != NULL) {
-    sscanf(millis, "%lf", &when);
-    return when;
-  } else if (seconds != NULL) {
-    sscanf(seconds, "%lf", &when);
-    return when * 1000.0;
-  }
-
-  if (parse != NULL) {
-    if (format != NULL) {
-      if (!strcmp(format, FORMAT_MILLIS)) {
-        sscanf(parse, "%lf", &when);
-        return when;
-      } else if (!strcmp(format, FORMAT_SECONDS)) {
-        sscanf(parse, "%lf", &when);
-        return when * 1000.0;
-      }
-    }
-
-    fmt = udat_open(style, style, 0, tz, -1, NULL, 0, status);
-    if (format != NULL) {
-      charsToUCharsDefault(uFormat, sizeof(uFormat) / sizeof(uFormat[0]),
-                           format, -1, status);
-      udat_applyPattern(fmt, FALSE, uFormat, -1);
-    }
-
-    charsToUCharsDefault(uParse, sizeof(uParse) / sizeof(uParse[0]), parse, -1,
-                         status);
-    when = udat_parse(fmt, uParse, -1, &parsepos, status);
-    if (U_FAILURE(*status)) {
-      fprintf(stderr, "Error in Parse: %s\n", u_errorName(*status));
-      if (parsepos > 0 && parsepos <= (int32_t)strlen(parse)) {
-        fprintf(stderr,
-                "ERR>\"%s\" @%d\n"
-                "ERR> %*s^\n",
-                parse, parsepos, parsepos, "");
-      }
-    }
-
-    udat_close(fmt);
-    return when;
-  } else {
-    return ucal_getNow();
-  }
-}
-
-#endif
