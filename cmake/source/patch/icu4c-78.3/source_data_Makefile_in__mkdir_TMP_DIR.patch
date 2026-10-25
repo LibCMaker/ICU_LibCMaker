@@ -1,0 +1,12 @@
+diff --git a/source/data/Makefile.in b/source/data/Makefile.in
+index 266ad7a..e6b1a9a 100644
+--- a/source/data/Makefile.in
++++ b/source/data/Makefile.in
+@@ -240,6 +240,7 @@ ifneq ($(ICUDATA_SOURCE_IS_NATIVE_TARGET),YES)
+ 	@-$(RMV) $@
+ 	$(INVOKE) $(TOOLBINDIR)/icupkg -d $(BUILDDIR) --list -x \* $(ICUDATA_SOURCE_ARCHIVE) -o $@
+ else
++	mkdir -p $(TMP_DIR)
+ 	@echo "$@" > $@
+ endif
+ endif

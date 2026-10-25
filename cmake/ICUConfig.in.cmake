@@ -101,7 +101,7 @@ endif()
 # ICU::datpackage (icudtXXx.dat)
 #-----------------------------------------------------------------------
 
-set_and_check(icu_datpackage_LIB "${icu_DATPACKAGE_DIR}/@icu_datpackage_FILE_NAME@")
+# set_and_check(icu_datpackage_LIB "${icu_DATPACKAGE_DIR}/@icu_datpackage_FILE_NAME@")
 add_library(ICU::datpackage UNKNOWN IMPORTED)
 set_target_properties(ICU::datpackage PROPERTIES
   IMPORTED_LOCATION "${icu_datpackage_LIB}"

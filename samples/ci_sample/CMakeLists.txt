@@ -41,7 +41,7 @@ cmr_common_sample_part__project_settings()
 #-----------------------------------------------------------------------
 
 list(APPEND CMAKE_PREFIX_PATH ${LibCMaker_LIB_DIR}/ICU_LibCMaker/cmake)
-find_package(ICU REQUIRED NO_PACKAGE_ROOT_PATH)
+find_package(ICU REQUIRED CONFIG)
 
 
 #-----------------------------------------------------------------------

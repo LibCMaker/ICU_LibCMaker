@@ -117,7 +117,7 @@ execute_process(
 
 function(apply_source_patch _name)
   set(${_name}_STAMP
-    "${icu_BUILD_DIR}/stamp__patch__${_name}__.stamp"
+    "${icu_SRC_DIR}/stamp__patch__${_name}__.stamp"
   )
   if(NOT EXISTS ${${_name}_STAMP})
     cmr_print_status("Apply ICU source patch: '${_name}'")
@@ -140,7 +140,6 @@ function(apply_source_patch _name)
         "${${_name}_FILE}"
       WORKING_DIRECTORY ${icu_SRC_DIR}
       RESULT_VARIABLE res_${_name}
-      COMMAND_ECHO STDERR
     )
 
     if (res_${_name})
@@ -213,7 +212,6 @@ if(is_android)
     set(_icu_use_ndk_images true)
   endif()
 
-  # TODO: from Skia.
   string(APPEND icu_GN_ARGS " ndk=\"${ndk}\"")
   string(APPEND icu_GN_ARGS " ndk_api=${ndk_api}")
   string(APPEND icu_GN_ARGS " target_cpu=\"${target_cpu}\"")
@@ -383,15 +381,15 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
-string(APPEND icu_ASFLAGS " ${icu_FLAGS} ${CMAKE_ASM_FLAGS}")
+string(APPEND icu_ASFLAGS " ${CMAKE_ASM_FLAGS}")
 string(APPEND icu_ASFLAGS " $<$<CONFIG:Debug>:${CMAKE_ASM_FLAGS_DEBUG}>")
 string(APPEND icu_ASFLAGS " $<$<CONFIG:Release>:${CMAKE_ASM_FLAGS_RELEASE}>")
 
-string(APPEND icu_CFLAGS " ${icu_FLAGS} ${CMAKE_C_FLAGS}")
+string(APPEND icu_CFLAGS " ${CMAKE_C_FLAGS}")
 string(APPEND icu_CFLAGS " $<$<CONFIG:Debug>:${CMAKE_C_FLAGS_DEBUG}>")
 string(APPEND icu_CFLAGS " $<$<CONFIG:Release>:${CMAKE_C_FLAGS_RELEASE}>")
 
-string(APPEND icu_CXXFLAGS " ${icu_FLAGS} ${CMAKE_CXX_FLAGS}")
+string(APPEND icu_CXXFLAGS " ${CMAKE_CXX_FLAGS}")
 string(APPEND icu_CXXFLAGS " $<$<CONFIG:Debug>:${CMAKE_CXX_FLAGS_DEBUG}>")
 string(APPEND icu_CXXFLAGS " $<$<CONFIG:Release>:${CMAKE_CXX_FLAGS_RELEASE}>")
 
@@ -499,7 +497,7 @@ endif()
 include(GNUInstallDirs)
 
 # Run 'configure'
-set(icu_configure_STAMP "${icu_BUILD_DIR}/stamp__icu_configure.stamp")
+set(icu_configure_STAMP "${icu_SRC_DIR}/stamp__icu_configure.stamp")
 add_custom_command(OUTPUT ${icu_configure_STAMP}
   COMMAND ${CMAKE_COMMAND} -E env ${ICU_ENV}
     "${icu_SRC_DIR}/source/configure"
@@ -680,7 +678,7 @@ add_custom_command(OUTPUT ${icu_configure_STAMP}
 )
 
 # Run 'make'
-set(icu_build_STAMP "${icu_BUILD_DIR}/stamp__icu_build.stamp")
+set(icu_build_STAMP "${icu_SRC_DIR}/stamp__icu_build.stamp")
 add_custom_command(OUTPUT ${icu_build_STAMP}
   COMMAND ${CMAKE_COMMAND} -E env ${ICU_ENV}
     ${CMAKE_MAKE_PROGRAM} -j ${cmr_BUILD_MULTIPROC_CNT} ${icu_MAKE_SILENT}
@@ -697,7 +695,7 @@ add_custom_target(icu_build
 )
 
 ## Run 'make install'
-# set(icu_install_STAMP "${icu_BUILD_DIR}/stamp__icu_install.stamp")
+# set(icu_install_STAMP "${icu_SRC_DIR}/stamp__icu_install.stamp")
 # add_custom_command(OUTPUT ${icu_install_STAMP}
 #   COMMAND ${CMAKE_COMMAND} -E env ${ICU_ENV}
 #     ${CMAKE_MAKE_PROGRAM} -j ${cmr_BUILD_MULTIPROC_CNT} ${icu_MAKE_SILENT} install
@@ -715,7 +713,7 @@ add_custom_target(icu_build
 
 # Run 'make install'
 install(CODE "
-  set(icu_install_STAMP \"${icu_BUILD_DIR}/stamp__icu_install.stamp\")
+  set(icu_install_STAMP \"${icu_SRC_DIR}/stamp__icu_install.stamp\")
 
   if(NOT EXISTS \${icu_install_STAMP})
     message(STATUS \"Install ICU library\")
@@ -860,13 +858,13 @@ set(cmake_gen_config ON)
 
 configure_package_config_file(
   "${CMAKE_CURRENT_LIST_DIR}/ICUConfig.in.cmake"
-  "${icu_BUILD_DIR}/ICUConfig-config.cmake"
+  "${icu_BUILD_DIR}/ICUConfig-configure.cmake"
   INSTALL_DESTINATION "${icu_BUILD_DIR}"
   # INSTALL_PREFIX "/root"
   NO_SET_AND_CHECK_MACRO
 )
 
-include("${icu_BUILD_DIR}/ICUConfig-config.cmake")
+include("${icu_BUILD_DIR}/ICUConfig-configure.cmake")
 
 
 cmake_policy(POP)

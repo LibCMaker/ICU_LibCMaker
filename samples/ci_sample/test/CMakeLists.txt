@@ -27,12 +27,12 @@ if(BUILD_TESTING)
 
   if(TARGET ICU::datpackage)
     get_target_property(icu_datpackage_LIB ICU::datpackage IMPORTED_LOCATION)
-  endif()
 
-  set_tests_properties(${test_NAME} PROPERTIES
-    ENVIRONMENT
-      "ICU_DATA=${icu_datpackage_LIB}"
-  )
+    set_tests_properties(${test_NAME} PROPERTIES
+      ENVIRONMENT
+        "ICU_DATA=${icu_datpackage_LIB}"
+    )
+  endif()
 
   target_sources(${test_NAME}
     PRIVATE
